@@ -16,13 +16,20 @@ class PaymentsController < ApplicationController
     loan = Loan.find(params[:loan_id])
     payment = Payment.new(payment_params)
     payment.loan = loan
-    if payment.save
+    loan.balance -= payment.payment_amount
+
+    begin
+      payment.transaction do
+        payment.save!
+        loan.save!
+      end
       render json: params, status: :created
-    else
+    rescue
       render json: {
         error: payment.errors
       }, status: :unprocessable_entity
     end
+
   end
 
   private
